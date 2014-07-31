@@ -5,6 +5,8 @@
 #-------------------------------------------------
 
 QT       += core gui
+QT       += sql
+QT       += widgets
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -12,8 +14,11 @@ TARGET = Mameri
 TEMPLATE = app
 
 SOURCES += main.cpp\
-        mainwindow.cpp
+        mainwindow.cpp \
+    userprefsform.cpp
 
-HEADERS  += mainwindow.h
+HEADERS  += mainwindow.h \
+    userprefsform.h
 
-FORMS    += mainwindow.ui
+FORMS    += mainwindow.ui \
+    userprefsform.ui
