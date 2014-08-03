@@ -15,10 +15,13 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    userprefsform.cpp
+    userprefsform.cpp \
+    userloginform.cpp
 
 HEADERS  += mainwindow.h \
-    userprefsform.h
+    userprefsform.h \
+    userloginform.h
 
 FORMS    += mainwindow.ui \
-    userprefsform.ui
+    userprefsform.ui \
+    userloginform.ui

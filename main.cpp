@@ -19,14 +19,13 @@ int main(int argc, char *argv[])
 
     if(db.open())   {
         qDebug() << "Opened!";
+        MainWindow w;
+        w.show();
         db.close();
     }
     else    {
         qDebug() << "Something went Wrong:" << db.lastError().text();
     }
-
-    MainWindow w;
-    w.show();
 
     return a.exec();
 }
