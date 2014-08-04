@@ -19,7 +19,7 @@ public:
 private slots:
     void on_closeButton_clicked();
 
-    void on_loginButton_clicked(db);
+    void on_loginButton_clicked();
 
 private:
     Ui::userLoginForm *ui;

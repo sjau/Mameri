@@ -3,15 +3,14 @@
 #include <QtWidgets>
 #include "userprefsform.h"
 #include "userloginform.h"
-#include <QtSql>
 
-MainWindow::MainWindow(QSqlDatabase db, QWidget *parent) :
+MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     userLoginForm loginForm;
     loginForm.setModal(true);
-    loginForm.exec(db);
+    loginForm.exec();
     ui->setupUi(this);
 }
 

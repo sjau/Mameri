@@ -10,7 +10,7 @@ userLoginForm::userLoginForm(QWidget *parent) :
     ui->setupUi(this);
 }
 
-userLoginForm::~userLoginForm(db)
+userLoginForm::~userLoginForm()
 {
     delete ui;
 }
@@ -20,18 +20,19 @@ void userLoginForm::on_closeButton_clicked()
 
 }
 
-void userLoginForm::on_loginButton_clicked(db)
+void userLoginForm::on_loginButton_clicked()
 {
     QString userName,userPasswd;
     userName=ui->userName->text();
     userPasswd=ui->userPasswd->text();
 
-    if(!db.isopen()) {
+    QSqlDatabase db = QSqlDatabase::database();
+    if(!db.open()) {
         qDebug() << "Failed to open DB";
         return;
     }
 
-   QString sql = "SELECT * FROM WHERE login = :username AND password = :password AND enabled = 1"
+   QString sql = "SELECT * FROM users WHERE login = :username AND password = :password AND enabled = 1";
    QSqlQuery qry;
    qry.prepare(sql);
    qry.bindValue(":username", userName);
