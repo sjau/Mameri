@@ -2,6 +2,7 @@
 #define USERLOGINFORM_H
 
 #include <QDialog>
+#include <QtSql>
 
 namespace Ui {
 class userLoginForm;
@@ -17,6 +18,8 @@ public:
 
 private slots:
     void on_closeButton_clicked();
+
+    void on_loginButton_clicked(db);
 
 private:
     Ui::userLoginForm *ui;

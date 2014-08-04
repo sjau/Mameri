@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
 
     if(db.open())   {
         qDebug() << "Opened!";
-        MainWindow w;
+        MainWindow w(db);
         w.show();
         db.close();
     }
