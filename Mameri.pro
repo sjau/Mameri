@@ -16,12 +16,15 @@ TEMPLATE = app
 SOURCES += main.cpp\
         mainwindow.cpp \
     userprefsform.cpp \
-    userloginform.cpp
+    userloginform.cpp \
+    installWizard/installwizard.cpp
 
 HEADERS  += mainwindow.h \
     userprefsform.h \
-    userloginform.h
+    userloginform.h \
+    installWizard/installwizard.h
 
 FORMS    += mainwindow.ui \
     userprefsform.ui \
-    userloginform.ui
+    userloginform.ui \
+    installWizard/installwizard.ui
