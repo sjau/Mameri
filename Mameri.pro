@@ -26,5 +26,4 @@ HEADERS  += mainwindow.h \
 
 FORMS    += mainwindow.ui \
     userprefsform.ui \
-    userloginform.ui \
-    installWizard/installwizard.ui
+    userloginform.ui

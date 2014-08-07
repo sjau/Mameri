@@ -44,6 +44,7 @@ int main(int argc, char *argv[])
     // Load MySQL Settings
     QSettings mysqlSettings(mysqlLocation, QSettings::IniFormat);
     QString myHostname  = mysqlSettings.value("hostname").toString();
+    int myPort          = mysqlSettings.value("port").toInt();
     QString myDbname    = mysqlSettings.value("dbname").toString();
     QString myUsername  = mysqlSettings.value("username").toString();
     QString myPassword  = mysqlSettings.value("password").toString();
@@ -51,6 +52,7 @@ int main(int argc, char *argv[])
 
     QSqlDatabase db = QSqlDatabase::addDatabase("QMYSQL");
     db.setHostName(myHostname);
+    db.setPort(myPort);
     db.setDatabaseName(myDbname);
     db.setUserName(myUsername);
     db.setPassword(myPassword);

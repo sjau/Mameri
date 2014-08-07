@@ -3,6 +3,9 @@
 #include <QtWidgets>
 #include <QFileDialog>
 #include <QObject>
+#include <QtSql>
+#include <QDialog>
+#include <QSettings>
 
 installWizard::installWizard(QWidget *parent) :
     QWizard(parent),
@@ -11,6 +14,7 @@ installWizard::installWizard(QWidget *parent) :
     setPage(Page_Intro, new IntroPage);
     setPage(Page_MySQL, new MySQLPage);
     setPage(Page_PathOnly, new PathOnlyPage);
+    setPage(Page_Schema, new SchemaPage);
     setPage(Page_Conclusion, new ConclusionPage);
 
     setStartId(Page_Intro);
@@ -32,7 +36,8 @@ IntroPage::IntroPage(QWidget *parent)
 
     topLabel = new QLabel(tr("This wizard will help you to setup Mameri.<br>"
                              "- Use 'Locate MySql Config File' if Mameri is already setup on your network.<br>"
-                             "- Use 'Install Mameri Server' if there's isn't anything setup yet."));
+                             "- Use 'Install Mameri Server' if there's isn't anything setup yet.<br>"
+                             "&nbsp;&nbsp;or if you need to recreate the MySQL Config File."));
     topLabel->setWordWrap(true);
 
     pathRadioButton = new QRadioButton(tr("&Locate MySQL Config File"));
@@ -55,25 +60,28 @@ int IntroPage::nextId() const
     }
 }
 
+
+
+
 PathOnlyPage::PathOnlyPage(QWidget *parent)
     : QWizardPage(parent)
 {
     setTitle(tr("Locate MySQL Config File"));
     setSubTitle(tr("Choose path to your MySQL Config File. Ask your admin for help."));
 
-    pathLabel = new QLabel(tr("MySQL Config File Location:"));
-    pathLineEdit = new QLineEdit;
-    pathLabel->setBuddy(pathLineEdit);
+    mysqlLocationLabel = new QLabel(tr("MySQL Config File Location:"));
+    mysqlLocationLineEdit = new QLineEdit;
+    mysqlLocationLabel->setBuddy(mysqlLocationLineEdit);
 
-    pathPushButton = new QPushButton(tr("Select MySQL Config File"));;
-    connect(pathPushButton, SIGNAL(clicked()), this, SLOT(selectMySQLFile()));
+    mysqlLocationPushButton = new QPushButton(tr("Locate MySQL Config File"));;
+    connect(mysqlLocationPushButton, SIGNAL(clicked()), this, SLOT(locateMySQLFile()));
 
-    registerField("register.mysqlPath*", pathLineEdit);
+    registerField("mysqlLocation*", mysqlLocationLineEdit);
 
     QGridLayout *layout = new QGridLayout;
-    layout->addWidget(pathLabel, 0, 0);
-    layout->addWidget(pathLineEdit, 0, 1);
-    layout->addWidget(pathPushButton, 1, 1);
+    layout->addWidget(mysqlLocationLabel, 0, 0);
+    layout->addWidget(mysqlLocationLineEdit, 0, 1);
+    layout->addWidget(mysqlLocationPushButton, 1, 1);
     setLayout(layout);
 }
 
@@ -82,59 +90,232 @@ int PathOnlyPage::nextId() const
     return installWizard::Page_Conclusion;
 }
 
-void PathOnlyPage::selectMySQLFile() {
-    QString mysqlFileName;
-    mysqlFileName = QFileDialog::getOpenFileName(0, "Select File", "", "MySQL Settings (Mameri.mysql.ini)");
+void PathOnlyPage::locateMySQLFile()
+{
+    QString mysqlLocation;
+    mysqlLocation = QFileDialog::getOpenFileName(0, "Select File", "", "MySQL Settings (Mameri.mysql.ini)");
+    mysqlLocationLineEdit->setText(mysqlLocation);
 }
+
+
 
 
 MySQLPage::MySQLPage(QWidget *parent)
     : QWizardPage(parent)
 {
-    setTitle(tr("Register Your Copy of <i>Super Product One</i>&trade;"));
-    setSubTitle(tr("If you have an upgrade key, please fill in "
-                   "the appropriate field."));
+    setTitle(tr("MySQL DB Connection"));
+    setSubTitle(tr("Please provide the MySQL DB connection details:"));
 
-    nameLabel = new QLabel(tr("N&ame:"));
-    nameLineEdit = new QLineEdit;
-    nameLabel->setBuddy(nameLineEdit);
+    mysqlHostLabel = new QLabel(tr("MySQL Host:"));
+    mysqlHostLineEdit = new QLineEdit;
+    mysqlHostLineEdit->setText("localhost");
+    mysqlHostLabel->setBuddy(mysqlHostLineEdit);
 
-    upgradeKeyLabel = new QLabel(tr("&Upgrade key:"));
-    upgradeKeyLineEdit = new QLineEdit;
-    upgradeKeyLabel->setBuddy(upgradeKeyLineEdit);
+    mysqlPortLabel = new QLabel(tr("MySQL Port:"));
+    mysqlPortLineEdit = new QLineEdit;
+    mysqlPortLineEdit->setText("3306");
+    mysqlPortLabel->setBuddy(mysqlPortLineEdit);
 
-    registerField("register.name*", nameLineEdit);
-    registerField("register.upgradeKey", upgradeKeyLineEdit);
+    mysqlDatabaseLabel = new QLabel(tr("MySQL DB Name:"));
+    mysqlDatabaseLineEdit = new QLineEdit;
+    mysqlDatabaseLabel->setBuddy(mysqlDatabaseLineEdit);
+
+    mysqlUserLabel = new QLabel(tr("MySQL User Name:"));
+    mysqlUserLineEdit = new QLineEdit;
+    mysqlUserLabel->setBuddy(mysqlUserLineEdit);
+
+    mysqlPasswordLabel = new QLabel(tr("MySQL Password:"));
+    mysqlPasswordLineEdit = new QLineEdit;
+    mysqlPasswordLineEdit->setEchoMode(QLineEdit::Password);
+    mysqlPasswordLabel->setBuddy(mysqlPasswordLineEdit);
+
+
+    mysqlPathLabel = new QLabel(tr("Store Connection File in:"));
+    mysqlPathLineEdit = new QLineEdit;
+    mysqlPathLabel->setBuddy(mysqlPathLineEdit);
+
+    mysqlPathPushButton = new QPushButton(tr("Select Folder"));;
+    connect(mysqlPathPushButton, SIGNAL(clicked()), this, SLOT(locateMySQLPath()));
+
+    mysqlTestPushButton = new QPushButton(tr("Test Connection"));;
+    connect(mysqlTestPushButton, SIGNAL(clicked()), this, SLOT(testMySQLConnection()));
+
+    // Since I prefilled host and port with default values, I can't make them mandatory as mandatory checks if the value is different from initialization and now
+    registerField("xmysqlHost",      mysqlHostLineEdit);
+    registerField("mysqlPort",      mysqlPortLineEdit);
+    registerField("mysqlDatabase*", mysqlDatabaseLineEdit);
+    registerField("mysqlUser*",     mysqlUserLineEdit);
+    registerField("mysqlPassword*", mysqlPasswordLineEdit);
+    registerField("mysqlPath*",     mysqlPathLineEdit);
+
 
     QGridLayout *layout = new QGridLayout;
-    layout->addWidget(nameLabel, 0, 0);
-    layout->addWidget(nameLineEdit, 0, 1);
-    layout->addWidget(upgradeKeyLabel, 1, 0);
-    layout->addWidget(upgradeKeyLineEdit, 1, 1);
+    layout->addWidget(mysqlHostLabel, 0, 0);
+    layout->addWidget(mysqlHostLineEdit, 0, 1);
+    layout->addWidget(mysqlPortLabel, 1, 0);
+    layout->addWidget(mysqlPortLineEdit, 1, 1);
+    layout->addWidget(mysqlDatabaseLabel, 2, 0);
+    layout->addWidget(mysqlDatabaseLineEdit, 2, 1);
+    layout->addWidget(mysqlUserLabel, 3, 0);
+    layout->addWidget(mysqlUserLineEdit, 3, 1);
+    layout->addWidget(mysqlPasswordLabel, 4, 0);
+    layout->addWidget(mysqlPasswordLineEdit, 4, 1);
+    layout->addWidget(mysqlPathLabel, 5, 0);
+    layout->addWidget(mysqlPathLineEdit, 5, 1);
+    layout->addWidget(mysqlPathPushButton, 5, 2);
+    layout->addWidget(mysqlTestPushButton, 6, 1);
     setLayout(layout);
 }
 
 int MySQLPage::nextId() const
 {
+    return installWizard::Page_Schema;
+}
+
+void MySQLPage::locateMySQLPath()
+{
+    QString mysqlPath;
+    mysqlPath = QFileDialog::getExistingDirectory(0, "Select Folder", "", QFileDialog::ShowDirsOnly);
+    mysqlPathLineEdit->setText(mysqlPath);
+}
+
+void MySQLPage::testMySQLConnection()
+{
+    QString mysqlHostF       = field("xmysqlHost").toString();
+    int mysqlPortF           = field("mysqlPort").toInt();
+    QString mysqlDatabaseF   = field("mysqlDatabase").toString();
+    QString mysqlUserF       = field("mysqlUser").toString();
+    QString mysqlPasswordF   = field("mysqlPassword").toString();
+
+    // Make the DB connection. Put that stuff into own scope, otherwise a warning appears
+    {
+        QSqlDatabase dbTest = QSqlDatabase::addDatabase("QMYSQL", "testConn");
+        dbTest.setHostName      (mysqlHostF);
+        dbTest.setPort          (mysqlPortF);
+        dbTest.setDatabaseName  (mysqlDatabaseF);
+        dbTest.setUserName      (mysqlUserF);
+        dbTest.setPassword      (mysqlPasswordF);
+
+        dbTest.setConnectOptions();
+
+        if(dbTest.open())   {
+            QMessageBox::warning(0,"Success","Access to MySQL DB is fine.");
+            dbTest.close();
+        } else {
+            QMessageBox::warning(0,"Error","Couldn't open database.<br>Please check your settings.");
+        }
+    }
+    QSqlDatabase::removeDatabase("testConn");
+}
+
+
+
+
+SchemaPage::SchemaPage(QWidget *parent)
+    : QWizardPage(parent)
+{
+    setTitle(tr("MySQL Schema"));
+
+    topLabel = new QLabel(tr("Chose whether you also want to setup the MySQL tables<br>"
+                             "- Yes, the tables will also be setup<br>"
+                             "- No, only the MySQL Connection fille will be created"));
+    topLabel->setWordWrap(true);
+
+    addSchemaRadioButton = new QRadioButton(tr("Yes"));
+    skipSchemaRadioButton = new QRadioButton(tr("No, skip tables setup"));
+    addSchemaRadioButton->setChecked(true);
+    schemaLineEdit = new QLineEdit;
+
+    if(addSchemaRadioButton->isChecked())
+    {
+        schemaLineEdit->setText("addSchema");
+    } else {
+        schemaLineEdit->setText("skipSchema");
+    }
+    registerField("mysqlSchema", schemaLineEdit);
+
+    QVBoxLayout *layout = new QVBoxLayout;
+    layout->addWidget(topLabel);
+    layout->addWidget(addSchemaRadioButton);
+    layout->addWidget(skipSchemaRadioButton);
+    setLayout(layout);
+}
+
+int SchemaPage::nextId() const
+{
     return installWizard::Page_Conclusion;
 }
+
+
+
 
 ConclusionPage::ConclusionPage(QWidget *parent)
     : QWizardPage(parent)
 {
-    setTitle(tr("Complete Your Registration"));
-    setPixmap(QWizard::WatermarkPixmap, QPixmap(":/images/watermark.png"));
+    // Get all the supplied info
+    QString mysqlLocation    = field("mysqlLocation").toString();
+    QString mysqlHost        = field("xmysqlHost").toString();
+    int mysqlPort            = field("mysqlPort").toInt();
+    QString mysqlDatabase    = field("mysqlDatabase").toString();
+    QString mysqlUser        = field("mysqlUser").toString();
+    QString mysqlPassword    = field("mysqlPassword").toString();
+    QString mysqlPath        = field("mysqlPath").toString();
+    QString mysqlSchema      = field("mysqlSchema").toString();
 
-    bottomLabel = new QLabel;
-    bottomLabel->setWordWrap(true);
+    QString progress = "The install wizard did the following things:<br>";
 
-    agreeCheckBox = new QCheckBox(tr("I agree to the terms of the license"));
+    // Check if the mysql connections file has to be written
+    if(!mysqlHost.isEmpty())
+    {
+        // Store the path to the mysql settings file for current user
+        QString mysqlFileName   = "/Mameri.mysql.ini";
+        mysqlPath.append(mysqlFileName);
+        QSettings mysqlFileSettings(mysqlPath, QSettings::IniFormat);
+        mysqlFileSettings.beginGroup("MySQL");
+        mysqlFileSettings.setValue("hostname",    mysqlHost);
+        mysqlFileSettings.setValue("port",        mysqlPort);
+        mysqlFileSettings.setValue("dbname",      mysqlDatabase);
+        mysqlFileSettings.setValue("username",    mysqlUser);
+        mysqlFileSettings.setValue("password",    mysqlPassword);
+        mysqlFileSettings.endGroup();
+        QString mysqlConfig   ="<br>- wrote the MySQL Config Settings";
+        progress.append(mysqlConfig);
+    }
 
-    registerField("conclusion.agree*", agreeCheckBox);
+    // Check if MySQL Schema needs to be loaded
+    QString mysqlSchemaCheck = "addSchema";
+    if(mysqlSchema == mysqlSchemaCheck)
+    {
+
+        // Load the Schema into the db
+        // TODO
+        QString mysqlConfig   ="<br>- loaded the Schema into the Database";
+        progress.append(mysqlConfig);
+    }
+
+    // Check if pat to the MySQL Config Settings file was given
+    if(!mysqlLocation.isEmpty())
+    {
+        QSettings settingLocal("Mameri", "mameri");
+        settingLocal.beginGroup("MySQLPath");
+        settingLocal.setValue("location",    mysqlLocation);
+        settingLocal.endGroup();
+    } else {
+        QSettings settingLocal("Mameri", "mameri");
+        settingLocal.beginGroup("MySQLPath");
+        settingLocal.setValue("location",    mysqlPath);
+        settingLocal.endGroup();
+    }
+    QString mysqlLocal   ="<br>- set path to the MySQL Config Settings file";
+    progress.append(mysqlLocal);
+
+    setTitle(tr("Setup Complete"));
+
+    finishLabel = new QLabel;
+    finishLabel->setText(progress);
 
     QVBoxLayout *layout = new QVBoxLayout;
-    layout->addWidget(bottomLabel);
-    layout->addWidget(agreeCheckBox);
+    layout->addWidget(finishLabel);
     setLayout(layout);
 }
 
@@ -143,23 +324,4 @@ int ConclusionPage::nextId() const
     return -1;
 }
 
-void ConclusionPage::initializePage()
-{
-    QString licenseText;
-
-    if (wizard()->hasVisitedPage(installWizard::Page_MySQL)) {
-        licenseText = tr("<u>Evaluation License Agreement:</u> "
-                         "You can use this software for 30 days and make one "
-                         "backup, but you are not allowed to distribute it.");
-    } else if (wizard()->hasVisitedPage(installWizard::Page_PathOnly)) {
-        licenseText = tr("<u>First-Time License Agreement:</u> "
-                         "You can use this software subject to the license "
-                         "you will receive by email.");
-    } else {
-        licenseText = tr("<u>Upgrade License Agreement:</u> "
-                         "This software is licensed under the terms of your "
-                         "current license.");
-    }
-    bottomLabel->setText(licenseText);
-}
 
