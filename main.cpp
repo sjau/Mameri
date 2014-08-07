@@ -26,20 +26,6 @@ int main(int argc, char *argv[])
         installWizard wizard;
         wizard.exec();
         // Either it's first run --> setup everything
-
-        // Or it's just a new computer --> set path to mysql settings file
-        QString mysqlFileName;
-        do
-        {
-            qDebug() << "No mysql settings file selected";
-            mysqlFileName = QFileDialog::getOpenFileName(0, "Select File", "", "MySQL Settings (Mameri.mysql.ini)");
-        } while(QString(mysqlFileName).isNull());
-        // Store the path to the mysql settings file
-        QFileInfo mysqlFilePath(mysqlFileName);
-        QSettings setting("Mameri", "mameri");
-        setting.beginGroup("MySQLPath");
-        setting.setValue("location", mysqlFilePath.absoluteFilePath());
-        setting.endGroup();
     }
     // Load MySQL Settings
     QSettings mysqlSettings(mysqlLocation, QSettings::IniFormat);

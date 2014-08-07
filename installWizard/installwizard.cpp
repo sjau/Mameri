@@ -141,7 +141,7 @@ MySQLPage::MySQLPage(QWidget *parent)
     connect(mysqlTestPushButton, SIGNAL(clicked()), this, SLOT(testMySQLConnection()));
 
     // Since I prefilled host and port with default values, I can't make them mandatory as mandatory checks if the value is different from initialization and now
-    registerField("xmysqlHost",      mysqlHostLineEdit);
+    registerField("mysqlHost",      mysqlHostLineEdit);
     registerField("mysqlPort",      mysqlPortLineEdit);
     registerField("mysqlDatabase*", mysqlDatabaseLineEdit);
     registerField("mysqlUser*",     mysqlUserLineEdit);
@@ -181,7 +181,7 @@ void MySQLPage::locateMySQLPath()
 
 void MySQLPage::testMySQLConnection()
 {
-    QString mysqlHostF       = field("xmysqlHost").toString();
+    QString mysqlHostF       = field("mysqlHost").toString();
     int mysqlPortF           = field("mysqlPort").toInt();
     QString mysqlDatabaseF   = field("mysqlDatabase").toString();
     QString mysqlUserF       = field("mysqlUser").toString();
@@ -253,61 +253,61 @@ ConclusionPage::ConclusionPage(QWidget *parent)
     : QWizardPage(parent)
 {
     // Get all the supplied info
-    QString mysqlLocation    = field("mysqlLocation").toString();
-    QString mysqlHost        = field("xmysqlHost").toString();
-    int mysqlPort            = field("mysqlPort").toInt();
-    QString mysqlDatabase    = field("mysqlDatabase").toString();
-    QString mysqlUser        = field("mysqlUser").toString();
-    QString mysqlPassword    = field("mysqlPassword").toString();
-    QString mysqlPath        = field("mysqlPath").toString();
-    QString mysqlSchema      = field("mysqlSchema").toString();
+    QString myLocation    = field("mysqlLocation").toString();
+    QString myHost        = field("mysqlHost").toString();
+    int myPort            = field("mysqlPort").toInt();
+    QString myDatabase    = field("mysqlDatabase").toString();
+    QString myUser        = field("mysqlUser").toString();
+    QString myPassword    = field("mysqlPassword").toString();
+    QString myPath        = field("mysqlPath").toString();
+    QString mySchema      = field("mysqlSchema").toString();
 
     QString progress = "The install wizard did the following things:<br>";
 
     // Check if the mysql connections file has to be written
-    if(!mysqlHost.isEmpty())
+    if(!myHost.isEmpty())
     {
         // Store the path to the mysql settings file for current user
-        QString mysqlFileName   = "/Mameri.mysql.ini";
-        mysqlPath.append(mysqlFileName);
-        QSettings mysqlFileSettings(mysqlPath, QSettings::IniFormat);
-        mysqlFileSettings.beginGroup("MySQL");
-        mysqlFileSettings.setValue("hostname",    mysqlHost);
-        mysqlFileSettings.setValue("port",        mysqlPort);
-        mysqlFileSettings.setValue("dbname",      mysqlDatabase);
-        mysqlFileSettings.setValue("username",    mysqlUser);
-        mysqlFileSettings.setValue("password",    mysqlPassword);
-        mysqlFileSettings.endGroup();
-        QString mysqlConfig   ="<br>- wrote the MySQL Config Settings";
-        progress.append(mysqlConfig);
+        QString myFileName   = "/Mameri.mysql.ini";
+        myPath.append(myFileName);
+        QSettings myFileSettings(myPath, QSettings::IniFormat);
+        myFileSettings.beginGroup("MySQL");
+        myFileSettings.setValue("hostname",    myHost);
+        myFileSettings.setValue("port",        myPort);
+        myFileSettings.setValue("dbname",      myDatabase);
+        myFileSettings.setValue("username",    myUser);
+        myFileSettings.setValue("password",    myPassword);
+        myFileSettings.endGroup();
+        QString myConfig   ="<br>- wrote the MySQL Config Settings";
+        progress.append(myConfig);
     }
 
     // Check if MySQL Schema needs to be loaded
-    QString mysqlSchemaCheck = "addSchema";
-    if(mysqlSchema == mysqlSchemaCheck)
+    QString mySchemaCheck = "addSchema";
+    if(mySchema == mySchemaCheck)
     {
 
         // Load the Schema into the db
         // TODO
-        QString mysqlConfig   ="<br>- loaded the Schema into the Database";
-        progress.append(mysqlConfig);
+        QString myConfig   ="<br>- loaded the Schema into the Database";
+        progress.append(myConfig);
     }
 
     // Check if pat to the MySQL Config Settings file was given
-    if(!mysqlLocation.isEmpty())
+    if(!myLocation.isEmpty())
     {
         QSettings settingLocal("Mameri", "mameri");
         settingLocal.beginGroup("MySQLPath");
-        settingLocal.setValue("location",    mysqlLocation);
+        settingLocal.setValue("location",    myLocation);
         settingLocal.endGroup();
     } else {
         QSettings settingLocal("Mameri", "mameri");
         settingLocal.beginGroup("MySQLPath");
-        settingLocal.setValue("location",    mysqlPath);
+        settingLocal.setValue("location",    myPath);
         settingLocal.endGroup();
     }
-    QString mysqlLocal   ="<br>- set path to the MySQL Config Settings file";
-    progress.append(mysqlLocal);
+    QString myLocal   ="<br>- set path to the MySQL Config Settings file";
+    progress.append(myLocal);
 
     setTitle(tr("Setup Complete"));
 
