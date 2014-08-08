@@ -226,13 +226,10 @@ SchemaPage::SchemaPage(QWidget *parent)
     addSchemaRadioButton->setChecked(true);
     schemaLineEdit = new QLineEdit;
 
-    if(addSchemaRadioButton->isChecked())
-    {
-        schemaLineEdit->setText("addSchema");
-    } else {
-        schemaLineEdit->setText("skipSchema");
-    }
-    registerField("mysqlSchema", schemaLineEdit);
+    connect(addSchemaRadioButton, SIGNAL(clicked), this, SLOT(addSchemaSlot()));
+    connect(skipSchemaRadioButton, SIGNAL(clicked()), this, SLOT(skipSchemaSlot()));
+
+    registerField("mysqlSchema*",     schemaLineEdit);
 
     QVBoxLayout *layout = new QVBoxLayout;
     layout->addWidget(topLabel);
@@ -246,11 +243,31 @@ int SchemaPage::nextId() const
     return installWizard::Page_Conclusion;
 }
 
+void SchemaPage::addSchemaSlot()
+{
+    schemaLineEdit->setText("addSchema");
+}
+
+void SchemaPage::skipSchemaSlot()
+{
+    schemaLineEdit->setText("skipSchema");
+}
 
 
 
 ConclusionPage::ConclusionPage(QWidget *parent)
     : QWizardPage(parent)
+{
+    setTitle(tr("Setup Complete"));
+
+    finishLabel = new QLabel;
+
+    QVBoxLayout *layout = new QVBoxLayout;
+    layout->addWidget(finishLabel);
+    setLayout(layout);
+}
+
+void ConclusionPage::initializePage()
 {
     // Get all the supplied info
     QString myLocation    = field("mysqlLocation").toString();
@@ -265,7 +282,7 @@ ConclusionPage::ConclusionPage(QWidget *parent)
     QString progress = "The install wizard did the following things:<br>";
 
     // Check if the mysql connections file has to be written
-    if(!myHost.isEmpty())
+    if(!myPath.isEmpty())
     {
         // Store the path to the mysql settings file for current user
         QString myFileName   = "/Mameri.mysql.ini";
@@ -279,6 +296,12 @@ ConclusionPage::ConclusionPage(QWidget *parent)
         myFileSettings.setValue("password",    myPassword);
         myFileSettings.endGroup();
         QString myConfig   ="<br>- wrote the MySQL Config Settings";
+
+        QSettings settingLocal("Mameri", "mameri");
+        settingLocal.beginGroup("MySQLPath");
+        settingLocal.setValue("location",    myPath);
+        settingLocal.endGroup();
+
         progress.append(myConfig);
     }
 
@@ -294,30 +317,21 @@ ConclusionPage::ConclusionPage(QWidget *parent)
     }
 
     // Check if pat to the MySQL Config Settings file was given
-    if(!myLocation.isEmpty())
+    if(myPath.isEmpty())
     {
         QSettings settingLocal("Mameri", "mameri");
         settingLocal.beginGroup("MySQLPath");
         settingLocal.setValue("location",    myLocation);
         settingLocal.endGroup();
-    } else {
-        QSettings settingLocal("Mameri", "mameri");
-        settingLocal.beginGroup("MySQLPath");
-        settingLocal.setValue("location",    myPath);
-        settingLocal.endGroup();
     }
+
     QString myLocal   ="<br>- set path to the MySQL Config Settings file";
     progress.append(myLocal);
 
-    setTitle(tr("Setup Complete"));
-
-    finishLabel = new QLabel;
     finishLabel->setText(progress);
 
-    QVBoxLayout *layout = new QVBoxLayout;
-    layout->addWidget(finishLabel);
-    setLayout(layout);
 }
+
 
 int ConclusionPage::nextId() const
 {

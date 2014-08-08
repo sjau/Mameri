@@ -120,6 +120,10 @@ private:
     QRadioButton *addSchemaRadioButton;
     QRadioButton *skipSchemaRadioButton;
     QLineEdit *schemaLineEdit;
+
+private slots:
+    void addSchemaSlot();
+    void skipSchemaSlot();
 };
 
 
@@ -131,8 +135,10 @@ class ConclusionPage : public QWizardPage
 
 public:
     ConclusionPage(QWidget *parent = 0);
-
     int nextId() const;
+
+protected:
+    void initializePage();
 
 private:
     QLabel *finishLabel;
