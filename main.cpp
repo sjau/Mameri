@@ -14,13 +14,13 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
 
     // Load path to the mysql settings file
-    QSettings setting("Mameri", "mameri");
-    setting.beginGroup("MySQLPath");
-    QString mysqlLocation = setting.value("location").toString();
-    setting.endGroup();
+    QSettings myPath("Mameri", "mameri");
+    myPath.beginGroup("MySQLPath");
+    QString myLocation = myPath.value("location").toString();
+    myPath.endGroup();
 
-    QFileInfo mysqlIni(mysqlLocation);
-    if(!mysqlIni.isFile())
+    QFileInfo myIni(myLocation);
+    if(!myIni.isFile())
     {
         // Run install wizard
         installWizard wizard;
@@ -28,13 +28,14 @@ int main(int argc, char *argv[])
         // Either it's first run --> setup everything
     }
     // Load MySQL Settings
-    QSettings mysqlSettings(mysqlLocation, QSettings::IniFormat);
-    QString myHostname  = mysqlSettings.value("hostname").toString();
-    int myPort          = mysqlSettings.value("port").toInt();
-    QString myDbname    = mysqlSettings.value("dbname").toString();
-    QString myUsername  = mysqlSettings.value("username").toString();
-    QString myPassword  = mysqlSettings.value("password").toString();
-
+    QSettings myDBSettings(myLocation, QSettings::IniFormat);
+    myDBSettings.beginGroup("MySQL");
+    QString myHostname  = myDBSettings.value("hostname").toString();
+    int myPort          = myDBSettings.value("port").toInt();
+    QString myDbname    = myDBSettings.value("dbname").toString();
+    QString myUsername  = myDBSettings.value("username").toString();
+    QString myPassword  = myDBSettings.value("password").toString();
+    myDBSettings.endGroup();
 
     QSqlDatabase db = QSqlDatabase::addDatabase("QMYSQL");
     db.setHostName(myHostname);
@@ -47,25 +48,6 @@ int main(int argc, char *argv[])
     db.setConnectOptions();
 
     if(db.open())   {
-        qDebug() << "Opened!";
-
-        // Check if Tables are already setup and if there's an administrative user
-        // Will be put into first run later...
-        QString sql = "SELECT * FROM users WHERE role = 1";
-        QSqlQuery qry;
-        qry.prepare(sql);
-        if(qry.exec())
-        {
-            if(qry.size() < 1)
-            {
-                qDebug() << "no admin user yet";
-                // No admin user found, run the first run window
-                //firstRunWindow firstRun;
-                //firstRun.show();
-            }
-        }
-
-
         MainWindow w;
         w.show();
         db.close();

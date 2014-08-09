@@ -419,10 +419,11 @@ void ConclusionPage::initializePage()
 
         if(dbInstall.open())
         {
-            QSqlQuery qry;
+            QSqlQuery qry(dbInstall);
 
             // Load the Schema into the db
-            QFile file("../mameri.sql");
+            qDebug() << "App path : " << qApp->applicationDirPath();
+            QFile file("mameri.sql");
             if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return;
             QTextStream in(&file);
             QString DBSQLCommands = in.readAll();
@@ -437,11 +438,12 @@ void ConclusionPage::initializePage()
             QString hashedPassword(hashed.toHex().constData());
 
             // Add Admin user
-            QString sql = "INSER INTO users SET login = :login, password = :password, role = 'Admin', salt = :salt ;";
+            QString sql = "INSERT INTO users SET login = :login, role = :role, salt = :salt, password = :password ;";
+            qry.prepare(sql);
             qry.bindValue(":login", myAdminUser);
+            qry.bindValue(":role", "1");
             qry.bindValue(":password", hashedPassword);
             qry.bindValue(":salt", salt);
-            qry.prepare(sql);
             qry.exec();
         }
         dbInstall.close();
@@ -449,7 +451,7 @@ void ConclusionPage::initializePage()
 
         QString myConfig   ="<br>- loaded the Schema into the Database";
         progress.append(myConfig);
-        QString myAdmin   ="<br>- loaded the Schema into the Database";
+        QString myAdmin   ="<br>- added admin user to the Database";
         progress.append(myAdmin);
     }
 

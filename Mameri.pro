@@ -27,3 +27,6 @@ HEADERS  += mainwindow.h \
 FORMS    += mainwindow.ui \
     userprefsform.ui \
     userloginform.ui
+
+OTHER_FILES += \
+    mameri.sql
