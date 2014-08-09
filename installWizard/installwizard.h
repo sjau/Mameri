@@ -1,4 +1,5 @@
 #ifndef INSTALLWIZARD_H
+
 #define INSTALLWIZARD_H
 
 #include <QWizard>
