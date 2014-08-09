@@ -6,6 +6,12 @@
 #include <QtSql>
 #include <QDialog>
 #include <QSettings>
+#include <QFile>
+#include <QTextStream>
+#include <QUuid>
+#include <QCryptographicHash>
+#include <QByteArray>
+
 
 installWizard::installWizard(QWidget *parent) :
     QWizard(parent),
@@ -15,6 +21,7 @@ installWizard::installWizard(QWidget *parent) :
     setPage(Page_MySQL, new MySQLPage);
     setPage(Page_PathOnly, new PathOnlyPage);
     setPage(Page_Schema, new SchemaPage);
+    setPage(Page_Admin, new AdminPage);
     setPage(Page_Conclusion, new ConclusionPage);
 
     setStartId(Page_Intro);
@@ -40,8 +47,8 @@ IntroPage::IntroPage(QWidget *parent)
                              "&nbsp;&nbsp;or if you need to recreate the MySQL Config File."));
     topLabel->setWordWrap(true);
 
-    pathRadioButton = new QRadioButton(tr("&Locate MySQL Config File"));
-    fullRadioButton = new QRadioButton(tr("&Install Mameri Server"));
+    pathRadioButton = new QRadioButton(tr("Locate MySQL Config File"));
+    fullRadioButton = new QRadioButton(tr("Install Mameri Server"));
     pathRadioButton->setChecked(true);
 
     QVBoxLayout *layout = new QVBoxLayout;
@@ -129,25 +136,28 @@ MySQLPage::MySQLPage(QWidget *parent)
     mysqlPasswordLineEdit->setEchoMode(QLineEdit::Password);
     mysqlPasswordLabel->setBuddy(mysqlPasswordLineEdit);
 
-
     mysqlPathLabel = new QLabel(tr("Store Connection File in:"));
     mysqlPathLineEdit = new QLineEdit;
     mysqlPathLabel->setBuddy(mysqlPathLineEdit);
 
+    mysqlDBTestLabel = new QLabel();
+
     mysqlPathPushButton = new QPushButton(tr("Select Folder"));;
     connect(mysqlPathPushButton, SIGNAL(clicked()), this, SLOT(locateMySQLPath()));
 
-    mysqlTestPushButton = new QPushButton(tr("Test Connection"));;
-    connect(mysqlTestPushButton, SIGNAL(clicked()), this, SLOT(testMySQLConnection()));
+    // Check DB Connection
+    connect(mysqlHostLineEdit,      SIGNAL(selectionChanged()), this, SIGNAL(completeChanged()));
+    connect(mysqlPortLineEdit,      SIGNAL(selectionChanged()), this, SIGNAL(completeChanged()));
+    connect(mysqlDatabaseLineEdit,  SIGNAL(selectionChanged()), this, SIGNAL(completeChanged()));
+    connect(mysqlUserLineEdit,      SIGNAL(selectionChanged()), this, SIGNAL(completeChanged()));
+    connect(mysqlPasswordLineEdit,  SIGNAL(selectionChanged()), this, SIGNAL(completeChanged()));
 
-    // Since I prefilled host and port with default values, I can't make them mandatory as mandatory checks if the value is different from initialization and now
     registerField("mysqlHost",      mysqlHostLineEdit);
     registerField("mysqlPort",      mysqlPortLineEdit);
     registerField("mysqlDatabase*", mysqlDatabaseLineEdit);
     registerField("mysqlUser*",     mysqlUserLineEdit);
     registerField("mysqlPassword*", mysqlPasswordLineEdit);
     registerField("mysqlPath*",     mysqlPathLineEdit);
-
 
     QGridLayout *layout = new QGridLayout;
     layout->addWidget(mysqlHostLabel, 0, 0);
@@ -163,7 +173,7 @@ MySQLPage::MySQLPage(QWidget *parent)
     layout->addWidget(mysqlPathLabel, 5, 0);
     layout->addWidget(mysqlPathLineEdit, 5, 1);
     layout->addWidget(mysqlPathPushButton, 5, 2);
-    layout->addWidget(mysqlTestPushButton, 6, 1);
+    layout->addWidget(mysqlDBTestLabel, 7, 1);
     setLayout(layout);
 }
 
@@ -179,36 +189,42 @@ void MySQLPage::locateMySQLPath()
     mysqlPathLineEdit->setText(mysqlPath);
 }
 
-void MySQLPage::testMySQLConnection()
+bool MySQLPage::isComplete() const
 {
-    QString mysqlHostF       = field("mysqlHost").toString();
-    int mysqlPortF           = field("mysqlPort").toInt();
-    QString mysqlDatabaseF   = field("mysqlDatabase").toString();
-    QString mysqlUserF       = field("mysqlUser").toString();
-    QString mysqlPasswordF   = field("mysqlPassword").toString();
+    QString testMysqlHost       = mysqlHostLineEdit->text();
+    QString testMysqlPortStr    = mysqlPortLineEdit->text();
+    int     testMysqlPort       = testMysqlPortStr.toInt();
+    QString testMysqlDatabase   = mysqlDatabaseLineEdit->text();
+    QString testMysqlUser       = mysqlUserLineEdit->text();
+    QString testMysqlPassword   = mysqlPasswordLineEdit->text();
+    QFileInfo testMysqlPath       = mysqlPathLineEdit->text();
 
-    // Make the DB connection. Put that stuff into own scope, otherwise a warning appears
+    QSqlDatabase dbTest = QSqlDatabase::addDatabase("QMYSQL", "testConn");
+    dbTest.setHostName      (testMysqlHost);
+    dbTest.setPort          (testMysqlPort);
+    dbTest.setDatabaseName  (testMysqlDatabase);
+    dbTest.setUserName      (testMysqlUser);
+    dbTest.setPassword      (testMysqlPassword);
+
+    dbTest.setConnectOptions();
+
+    if(dbTest.open())
     {
-        QSqlDatabase dbTest = QSqlDatabase::addDatabase("QMYSQL", "testConn");
-        dbTest.setHostName      (mysqlHostF);
-        dbTest.setPort          (mysqlPortF);
-        dbTest.setDatabaseName  (mysqlDatabaseF);
-        dbTest.setUserName      (mysqlUserF);
-        dbTest.setPassword      (mysqlPasswordF);
-
-        dbTest.setConnectOptions();
-
-        if(dbTest.open())   {
-            QMessageBox::warning(0,"Success","Access to MySQL DB is fine.");
-            dbTest.close();
+        dbTest.close();
+        mysqlDBTestLabel->setText(tr("DB connection ok."));
+        QSqlDatabase::removeDatabase("testConn");
+        if(testMysqlPath.isDir())
+        {
+            return true;
         } else {
-            QMessageBox::warning(0,"Error","Couldn't open database.<br>Please check your settings.");
+            return false;
         }
+    } else {
+        mysqlDBTestLabel->setText("");
+        QSqlDatabase::removeDatabase("testConn");
+        return false;
     }
-    QSqlDatabase::removeDatabase("testConn");
 }
-
-
 
 
 SchemaPage::SchemaPage(QWidget *parent)
@@ -225,11 +241,12 @@ SchemaPage::SchemaPage(QWidget *parent)
     skipSchemaRadioButton = new QRadioButton(tr("No, skip tables setup"));
     addSchemaRadioButton->setChecked(true);
     schemaLineEdit = new QLineEdit;
+    schemaLineEdit->setText("addSchema");
 
-    connect(addSchemaRadioButton, SIGNAL(clicked), this, SLOT(addSchemaSlot()));
+    connect(addSchemaRadioButton, SIGNAL(clicked()), this, SLOT(addSchemaSlot()));
     connect(skipSchemaRadioButton, SIGNAL(clicked()), this, SLOT(skipSchemaSlot()));
 
-    registerField("mysqlSchema*",     schemaLineEdit);
+    registerField("mysqlSchema",     schemaLineEdit);
 
     QVBoxLayout *layout = new QVBoxLayout;
     layout->addWidget(topLabel);
@@ -240,7 +257,12 @@ SchemaPage::SchemaPage(QWidget *parent)
 
 int SchemaPage::nextId() const
 {
-    return installWizard::Page_Conclusion;
+    if (addSchemaRadioButton->isChecked())
+    {
+        return installWizard::Page_Admin;
+    } else {
+        return installWizard::Page_Conclusion;
+    }
 }
 
 void SchemaPage::addSchemaSlot()
@@ -253,6 +275,78 @@ void SchemaPage::skipSchemaSlot()
     schemaLineEdit->setText("skipSchema");
 }
 
+
+
+
+AdminPage::AdminPage(QWidget *parent)
+    : QWizardPage(parent)
+{
+    setTitle(tr("Mameri Admin User"));
+    setSubTitle(tr("Setup an admin user for your Mameri installation:"));
+
+    adminUserLabel = new QLabel(tr("Admin User Name:"));
+    adminUserLineEdit = new QLineEdit;
+    adminUserLabel->setBuddy(adminUserLineEdit);
+
+    adminPasswordLabel = new QLabel(tr("Password:"));
+    adminPasswordLineEdit = new QLineEdit;
+    adminPasswordLineEdit->setEchoMode(QLineEdit::Password);
+    adminPasswordLabel->setBuddy(adminPasswordLineEdit);
+
+    adminPasswordRepeatLabel = new QLabel(tr("Repeat Password:"));
+    adminPasswordRepeatLineEdit = new QLineEdit;
+    adminPasswordRepeatLineEdit->setEchoMode(QLineEdit::Password);
+    adminPasswordRepeatLabel->setBuddy(adminPasswordRepeatLineEdit);
+
+    passwordMatchLabel = new QLabel();
+
+    connect(adminUserLineEdit, SIGNAL(selectionChanged()), this, SIGNAL(completeChanged()));
+    connect(adminPasswordLineEdit, SIGNAL(selectionChanged()), this, SIGNAL(completeChanged()));
+    connect(adminPasswordRepeatLineEdit, SIGNAL(selectionChanged()), this, SIGNAL(completeChanged()));
+
+    registerField("mysqlAdminUser*",             adminUserLineEdit);
+    registerField("mysqlAdminPassword*",         adminPasswordLineEdit);
+    registerField("mysqlAdminPasswordRepeat*",   adminPasswordRepeatLineEdit);
+
+    QGridLayout *layout = new QGridLayout;
+    layout->addWidget(adminUserLabel, 0, 0);
+    layout->addWidget(adminUserLineEdit, 0, 1);
+    layout->addWidget(adminPasswordLabel, 1, 0);
+    layout->addWidget(adminPasswordLineEdit, 1, 1);
+    layout->addWidget(adminPasswordRepeatLabel, 2, 0);
+    layout->addWidget(adminPasswordRepeatLineEdit, 2, 1);
+    layout->addWidget(passwordMatchLabel, 3, 1);
+
+    setLayout(layout);
+
+}
+
+bool AdminPage::isComplete() const
+{
+    QString testAdminUser = adminUserLineEdit->text();
+    QString testAdminPassword = adminPasswordLineEdit->text();
+    QString testAdminPasswordRepeat = adminPasswordRepeatLineEdit->text();
+
+    if( (testAdminPassword == testAdminPasswordRepeat) && (!testAdminPassword.isEmpty()) )
+    {
+        passwordMatchLabel->setText(tr("Passwords do match."));
+
+        if(!testAdminUser.isEmpty())
+        {
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        passwordMatchLabel->setText("");
+        return false;
+    }
+}
+
+int AdminPage::nextId() const
+{
+    return installWizard::Page_Conclusion;
+}
 
 
 ConclusionPage::ConclusionPage(QWidget *parent)
@@ -270,14 +364,17 @@ ConclusionPage::ConclusionPage(QWidget *parent)
 void ConclusionPage::initializePage()
 {
     // Get all the supplied info
-    QString myLocation    = field("mysqlLocation").toString();
-    QString myHost        = field("mysqlHost").toString();
-    int myPort            = field("mysqlPort").toInt();
-    QString myDatabase    = field("mysqlDatabase").toString();
-    QString myUser        = field("mysqlUser").toString();
-    QString myPassword    = field("mysqlPassword").toString();
-    QString myPath        = field("mysqlPath").toString();
-    QString mySchema      = field("mysqlSchema").toString();
+    QString myLocation              = field("mysqlLocation").toString();
+    QString myHost                  = field("mysqlHost").toString();
+    int myPort                      = field("mysqlPort").toInt();
+    QString myDatabase              = field("mysqlDatabase").toString();
+    QString myUser                  = field("mysqlUser").toString();
+    QString myPassword              = field("mysqlPassword").toString();
+    QString myPath                  = field("mysqlPath").toString();
+    QString mySchema                = field("mysqlSchema").toString();
+    QString myAdminUser             = field("mysqlAdminUser").toString();
+    QString myAdminPassword         = field("mysqlAdminPassword").toString();
+    QString myAdminPasswordRepeat   = field("mysqlAdminPasswordRepeat").toString();
 
     QString progress = "The install wizard did the following things:<br>";
 
@@ -309,11 +406,50 @@ void ConclusionPage::initializePage()
     QString mySchemaCheck = "addSchema";
     if(mySchema == mySchemaCheck)
     {
+        // Open DB connection
+        QSqlDatabase dbInstall = QSqlDatabase::addDatabase("QMYSQL", "installConn");
+        dbInstall.setHostName      (myHost);
+        dbInstall.setPort          (myPort);
+        dbInstall.setDatabaseName  (myDatabase);
+        dbInstall.setUserName      (myUser);
+        dbInstall.setPassword      (myPassword);
 
-        // Load the Schema into the db
-        // TODO
+        dbInstall.setConnectOptions();
+
+        if(dbInstall.open())
+        {
+            QSqlQuery qry;
+
+            // Load the Schema into the db
+            QFile file("../mameri.sql");
+            if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return;
+            QTextStream in(&file);
+            QString DBSQLCommands = in.readAll();
+            file.close();
+            qry.prepare(DBSQLCommands);
+            qry.exec();
+
+            // Create salt and hash password
+            QString salt = QUuid::createUuid().toString();
+            myAdminPassword.append(salt);
+            QByteArray hashed = QCryptographicHash::hash(myPassword.toUtf8(), QCryptographicHash::Sha3_256);
+            QString hashedPassword(hashed.toHex().constData());
+
+            // Add Admin user
+            QString sql = "INSER INTO users SET login = :login, password = :password, role = 'Admin', salt = :salt ;";
+            qry.bindValue(":login", myAdminUser);
+            qry.bindValue(":password", hashedPassword);
+            qry.bindValue(":salt", salt);
+            qry.prepare(sql);
+            qry.exec();
+        }
+        dbInstall.close();
+        QSqlDatabase::removeDatabase("installConn");
+
         QString myConfig   ="<br>- loaded the Schema into the Database";
         progress.append(myConfig);
+        QString myAdmin   ="<br>- loaded the Schema into the Database";
+        progress.append(myAdmin);
     }
 
     // Check if pat to the MySQL Config Settings file was given

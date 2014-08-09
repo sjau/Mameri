@@ -21,7 +21,7 @@ class installWizard : public QWizard
 
 public:
 
-    enum { Page_Intro, Page_MySQL, Page_PathOnly, Page_Schema, Page_Conclusion };
+    enum { Page_Intro, Page_MySQL, Page_PathOnly, Page_Schema, Page_Admin, Page_Conclusion };
 
     explicit installWizard(QWidget *parent = 0);
     ~installWizard();
@@ -39,7 +39,6 @@ class IntroPage : public QWizardPage
 
 public:
     IntroPage(QWidget *parent = 0);
-
     int nextId() const;
 
 private:
@@ -57,7 +56,6 @@ class PathOnlyPage : public QWizardPage
 
 public:
     PathOnlyPage(QWidget *parent = 0);
-
     int nextId() const;
 
 private:
@@ -78,8 +76,8 @@ class MySQLPage : public QWizardPage
 
 public:
     MySQLPage(QWidget *parent = 0);
-
     int nextId() const;
+    virtual bool isComplete() const;
 
 private:
     QLabel *mysqlHostLabel;
@@ -88,6 +86,7 @@ private:
     QLabel *mysqlUserLabel;
     QLabel *mysqlPasswordLabel;
     QLabel *mysqlPathLabel;
+    QLabel *mysqlDBTestLabel;
 
     QLineEdit *mysqlHostLineEdit;
     QLineEdit *mysqlPortLineEdit;
@@ -96,11 +95,9 @@ private:
     QLineEdit *mysqlPasswordLineEdit;
     QLineEdit *mysqlPathLineEdit;
     QPushButton *mysqlPathPushButton;
-    QPushButton *mysqlTestPushButton;
 
 private slots:
     void locateMySQLPath();
-    void testMySQLConnection();
 };
 
 
@@ -112,7 +109,6 @@ class SchemaPage : public QWizardPage
 
 public:
     SchemaPage(QWidget *parent = 0);
-
     int nextId() const;
 
 private:
@@ -124,6 +120,29 @@ private:
 private slots:
     void addSchemaSlot();
     void skipSchemaSlot();
+};
+
+
+
+
+class AdminPage : public QWizardPage
+{
+    Q_OBJECT
+
+public:
+    AdminPage(QWidget *parent = 0);
+    int nextId() const;
+    virtual bool isComplete() const;
+
+private:
+    QLabel *adminUserLabel;
+    QLabel *adminPasswordLabel;
+    QLabel *adminPasswordRepeatLabel;
+    QLabel *passwordMatchLabel;
+
+    QLineEdit *adminUserLineEdit;
+    QLineEdit *adminPasswordLineEdit;
+    QLineEdit *adminPasswordRepeatLineEdit;
 };
 
 
