@@ -13,20 +13,23 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = Mameri
 TEMPLATE = app
 
-SOURCES += main.cpp\
-        mainwindow.cpp \
-    userprefsform.cpp \
-    userloginform.cpp \
-    installWizard/installwizard.cpp
+SOURCES +=\
+    installWizard/installwizard.cpp \
+    src/main.cpp \
+    src/mainwindow.cpp \
+    src/userprefsform.cpp \
+    src/userloginform.cpp
 
-HEADERS  += mainwindow.h \
-    userprefsform.h \
-    userloginform.h \
-    installWizard/installwizard.h
+HEADERS  += \
+    installWizard/installwizard.h \
+    src/mainwindow.h \
+    src/userprefsform.h \
+    src/userloginform.h
 
-FORMS    += mainwindow.ui \
-    userprefsform.ui \
-    userloginform.ui
+FORMS    += \
+    src/mainwindow.ui \
+    src/userprefsform.ui \
+    src/userloginform.ui
 
 OTHER_FILES += \
     mameri.sql

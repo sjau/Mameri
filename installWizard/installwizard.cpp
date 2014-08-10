@@ -301,22 +301,34 @@ AdminPage::AdminPage(QWidget *parent)
 
     passwordMatchLabel = new QLabel();
 
+
+    adminSchemaLabel = new QLabel(tr("MySQL Database Schema File:"));
+    adminSchemaLineEdit = new QLineEdit;
+    adminSchemaLabel->setBuddy(adminSchemaLineEdit);
+
+    adminSchemaPushButton = new QPushButton(tr("Locate MySQL DB Schema File"));;
+
     connect(adminUserLineEdit, SIGNAL(selectionChanged()), this, SIGNAL(completeChanged()));
     connect(adminPasswordLineEdit, SIGNAL(selectionChanged()), this, SIGNAL(completeChanged()));
     connect(adminPasswordRepeatLineEdit, SIGNAL(selectionChanged()), this, SIGNAL(completeChanged()));
+    connect(adminSchemaPushButton, SIGNAL(clicked()), this, SLOT(locateMySQLSchema()));
 
     registerField("mysqlAdminUser*",             adminUserLineEdit);
     registerField("mysqlAdminPassword*",         adminPasswordLineEdit);
     registerField("mysqlAdminPasswordRepeat*",   adminPasswordRepeatLineEdit);
+    registerField("mysqlAdminSchema*",           adminSchemaLineEdit);
 
     QGridLayout *layout = new QGridLayout;
-    layout->addWidget(adminUserLabel, 0, 0);
-    layout->addWidget(adminUserLineEdit, 0, 1);
-    layout->addWidget(adminPasswordLabel, 1, 0);
-    layout->addWidget(adminPasswordLineEdit, 1, 1);
-    layout->addWidget(adminPasswordRepeatLabel, 2, 0);
-    layout->addWidget(adminPasswordRepeatLineEdit, 2, 1);
-    layout->addWidget(passwordMatchLabel, 3, 1);
+    layout->addWidget(adminSchemaLabel, 0, 0);
+    layout->addWidget(adminSchemaLineEdit, 0, 1);
+    layout->addWidget(adminSchemaPushButton, 1, 1);
+    layout->addWidget(adminUserLabel, 2, 0);
+    layout->addWidget(adminUserLineEdit, 2, 1);
+    layout->addWidget(adminPasswordLabel, 3, 0);
+    layout->addWidget(adminPasswordLineEdit, 3, 1);
+    layout->addWidget(adminPasswordRepeatLabel, 4, 0);
+    layout->addWidget(adminPasswordRepeatLineEdit, 4, 1);
+    layout->addWidget(passwordMatchLabel, 5, 1);
 
     setLayout(layout);
 
@@ -349,6 +361,15 @@ int AdminPage::nextId() const
     return installWizard::Page_Conclusion;
 }
 
+void AdminPage::locateMySQLSchema()
+{
+    QString schemaLocation;
+    schemaLocation = QFileDialog::getOpenFileName(0, "Select File", "", "MySQL DB Schema (mameri.sql)");
+    adminSchemaLineEdit->setText(schemaLocation);
+}
+
+
+
 
 ConclusionPage::ConclusionPage(QWidget *parent)
     : QWizardPage(parent)
@@ -376,6 +397,8 @@ void ConclusionPage::initializePage()
     QString myAdminUser             = field("mysqlAdminUser").toString();
     QString myAdminPassword         = field("mysqlAdminPassword").toString();
     QString myAdminPasswordRepeat   = field("mysqlAdminPasswordRepeat").toString();
+    QString mysqlAdminSchema        = field("mysqlAdminSchema").toString();
+
 
     QString progress = "The install wizard did the following things:<br>";
 
@@ -423,7 +446,7 @@ void ConclusionPage::initializePage()
 
             // Load the Schema into the db
             qDebug() << "App path : " << qApp->applicationDirPath();
-            QFile file("mameri.sql");
+            QFile file(mysqlAdminSchema);
             if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return;
             QTextStream in(&file);
             QString DBSQLCommands = in.readAll();

@@ -140,10 +140,16 @@ private:
     QLabel *adminPasswordLabel;
     QLabel *adminPasswordRepeatLabel;
     QLabel *passwordMatchLabel;
+    QLabel *adminSchemaLabel;
 
     QLineEdit *adminUserLineEdit;
     QLineEdit *adminPasswordLineEdit;
     QLineEdit *adminPasswordRepeatLineEdit;
+    QLineEdit *adminSchemaLineEdit;
+    QPushButton *adminSchemaPushButton;
+
+private slots:
+    void locateMySQLSchema();
 };
 
 
