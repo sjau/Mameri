@@ -14,17 +14,17 @@ TARGET = Mameri
 TEMPLATE = app
 
 SOURCES +=\
-    installWizard/installwizard.cpp \
     src/main.cpp \
     src/mainwindow.cpp \
     src/userprefsform.cpp \
-    src/userloginform.cpp
+    src/userloginform.cpp \
+    src/installWizard/installwizard.cpp
 
 HEADERS  += \
-    installWizard/installwizard.h \
     src/mainwindow.h \
     src/userprefsform.h \
-    src/userloginform.h
+    src/userloginform.h \
+    src/installWizard/installwizard.h
 
 FORMS    += \
     src/mainwindow.ui \
