@@ -15,21 +15,21 @@ TEMPLATE = app
 
 SOURCES +=\
     src/main.cpp \
-    src/mainwindow.cpp \
     src/userprefsform.cpp \
-    src/userloginform.cpp \
-    src/installWizard/installwizard.cpp
+    src/installWizard/installwizard.cpp \
+    src/loginForm/loginform.cpp \
+    src/mainWindow/mainwindow.cpp
 
 HEADERS  += \
-    src/mainwindow.h \
     src/userprefsform.h \
-    src/userloginform.h \
-    src/installWizard/installwizard.h
+    src/installWizard/installwizard.h \
+    src/loginForm/loginform.h \
+    src/mainWindow/mainwindow.h
 
 FORMS    += \
-    src/mainwindow.ui \
     src/userprefsform.ui \
-    src/userloginform.ui
+    src/loginForm/loginform.ui \
+    src/mainWindow/mainwindow.ui
 
 OTHER_FILES += \
     mameri.sql

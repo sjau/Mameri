@@ -101,7 +101,7 @@ int PathOnlyPage::nextId() const
 void PathOnlyPage::locateMySQLFile()
 {
     QString mysqlLocation;
-    mysqlLocation = QFileDialog::getOpenFileName(0, "Select File", "", "MySQL Settings (Mameri.mysql.ini)");
+    mysqlLocation = QFileDialog::getOpenFileName(0, tr("Select File"), "", tr("MySQL Settings (Mameri.mysql.ini)"));
     mysqlLocationLineEdit->setText(mysqlLocation);
 }
 
@@ -186,7 +186,7 @@ int MySQLPage::nextId() const
 void MySQLPage::locateMySQLPath()
 {
     QString mysqlPath;
-    mysqlPath = QFileDialog::getExistingDirectory(0, "Select Folder", "", QFileDialog::ShowDirsOnly);
+    mysqlPath = QFileDialog::getExistingDirectory(0, tr("Select Folder"), "", QFileDialog::ShowDirsOnly);
     mysqlPathLineEdit->setText(mysqlPath);
 }
 
@@ -364,7 +364,7 @@ int AdminPage::nextId() const
 void AdminPage::locateMySQLSchema()
 {
     QString schemaLocation;
-    schemaLocation = QFileDialog::getOpenFileName(0, "Select File", "", "MySQL DB Schema (mameri.sql)");
+    schemaLocation = QFileDialog::getOpenFileName(0, tr("Select File"), "", tr("MySQL DB Schema (mameri.sql)"));
     adminSchemaLineEdit->setText(schemaLocation);
 }
 
@@ -400,7 +400,7 @@ void ConclusionPage::initializePage()
     QString mysqlAdminSchema        = field("mysqlAdminSchema").toString();
 
 
-    QString progress = "The install wizard did the following things:<br>";
+    QString progress = tr("The install wizard did the following things:<br>");
 
     // Check if the mysql connections file has to be written
     if(!myPath.isEmpty())
@@ -416,7 +416,7 @@ void ConclusionPage::initializePage()
         myFileSettings.setValue("username",    myUser);
         myFileSettings.setValue("password",    myPassword);
         myFileSettings.endGroup();
-        QString myConfig   ="<br>- wrote the MySQL Config Settings";
+        QString myConfig   =tr("<br>- wrote the MySQL Config Settings");
 
         QSettings settingLocal("Mameri", "mameri");
         settingLocal.beginGroup("MySQLPath");
@@ -472,9 +472,9 @@ void ConclusionPage::initializePage()
         dbInstall.close();
         QSqlDatabase::removeDatabase("installConn");
 
-        QString myConfig   ="<br>- loaded the Schema into the Database";
+        QString myConfig   = tr("<br>- loaded the Schema into the Database");
         progress.append(myConfig);
-        QString myAdmin   ="<br>- added admin user to the Database";
+        QString myAdmin    = tr("<br>- added admin user to the Database");
         progress.append(myAdmin);
     }
 
@@ -487,7 +487,7 @@ void ConclusionPage::initializePage()
         settingLocal.endGroup();
     }
 
-    QString myLocal   ="<br>- set path to the MySQL Config Settings file";
+    QString myLocal   = tr("<br>- set path to the MySQL Config Settings file");
     progress.append(myLocal);
 
     finishLabel->setText(progress);

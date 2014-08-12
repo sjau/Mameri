@@ -1,4 +1,3 @@
-#include "mainwindow.h"
 #include <QApplication>
 #include <QtSql>
 #include <QtWidgets>
@@ -7,7 +6,9 @@
 #include <QFileInfo>
 #include <QFileDialog>
 
+#include "mainWindow/mainwindow.h"
 #include "installWizard/installwizard.h"
+#include "loginForm/loginform.h"
 
 int main(int argc, char *argv[])
 {
@@ -25,7 +26,6 @@ int main(int argc, char *argv[])
         // Run install wizard
         installWizard wizard;
         wizard.exec();
-        // Either it's first run --> setup everything
     }
     // Load MySQL Settings
     QSettings myDBSettings(myLocation, QSettings::IniFormat);
@@ -37,6 +37,7 @@ int main(int argc, char *argv[])
     QString myPassword  = myDBSettings.value("password").toString();
     myDBSettings.endGroup();
 
+    // Connect to DB
     QSqlDatabase db = QSqlDatabase::addDatabase("QMYSQL");
     db.setHostName(myHostname);
     db.setPort(myPort);
@@ -44,17 +45,29 @@ int main(int argc, char *argv[])
     db.setUserName(myUsername);
     db.setPassword(myPassword);
 
-
     db.setConnectOptions();
 
     if(db.open())   {
-        MainWindow w;
-        w.show();
-        db.close();
+        // User Login
+        bool isValid = false;
+        qApp->setProperty("isValid", isValid);
+
+        loginForm loginFormObj;
+        loginFormObj.setModal(true);
+        int cancelLogin = loginFormObj.exec();
+        // Kill process if cancel was used
+        if(cancelLogin == 0) return 0;
+
+        qDebug() << "Valid User? " << qApp->property("isValid");
+        qDebug() << "User ID? " << qApp->property("userId");
+        // Start main application window
+    } else
+    {
+        qDebug() << "Couldn't connect to DB:" << db.lastError().text();
+        qApp->quit();
     }
-    else    {
-        qDebug() << "Something went Wrong:" << db.lastError().text();
-    }
+    mainWindow w;
+    w.show();
 
     return a.exec();
 }
